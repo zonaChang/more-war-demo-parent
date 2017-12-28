@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>car.maven</groupId>
+		<artifactId>more-war-demo-parent</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+	<artifactId>more-war-demo-webapp</artifactId>
+	<packaging>war</packaging>
+	<name>more-war-demo-webapp Maven Webapp</name>
+	<url>http://maven.apache.org</url>
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>car.maven</groupId>
+			<artifactId>more-war-demo-war1</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<type>war</type>
+		</dependency>
+		<dependency>
+			<groupId>car.maven</groupId>
+			<artifactId>more-war-demo-war2</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<type>war</type>
+		</dependency>
+		<dependency>
+			<groupId>car.maven</groupId>
+			<artifactId>more-war-demo-jar</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<finalName>more-war-demo-webapp</finalName>
+		<filters>
+			<filter>${basedir}/src/main/filters/config_filter_${project.environment}.properties</filter>
+		</filters>
+		<resources>
+			<resource>
+				<directory>${basedir}/src/main/resources</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>**.*</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>${basedir}/src/main/config</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>**.*</include>
+				</includes>
+			</resource>
+		</resources>
+		<plugins>
+		
+			<!-- 该插件用于合并多个web工程为一个war，该插件只需要在主工程中配置即可，此处主工程为webapp，子工程为webapp_module1 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-war-plugin</artifactId>
+				<configuration>
+					<!-- 将所有classes文件封装成jar包放到WEB-INF/lib目录下 -->
+					<archiveClasses>true</archiveClasses>
+
+					<webResources>
+						<resource>
+							<directory>src/main/config</directory>
+							<targetPath>WEB-INF/classes</targetPath>
+						</resource>
+						<resource>
+							<directory>src/main/resources</directory>
+							<targetPath>WEB-INF/classes</targetPath>
+						</resource>
+					</webResources>
+
+					<!-- 必须配置此项，否则打包后的web.xml可能是某个子工程的，该配置用于排除打包overlays标签中配置的工程的web.xml，对所有overlays标签中的工程有效 -->
+					<packagingExcludes>WEB-INF/web.xml</packagingExcludes>
+					<overlays>
+						<!-- 这里配置的项目，需要在dependencies中定义，且需要添加type为war的配置， 否则pom文件报错 -->
+						<overlay>
+							<id>war1</id>
+							<groupId>car.maven</groupId>
+							<artifactId>more-war-demo-war1</artifactId>
+						</overlay>
+						<overlay>
+							<id>war2</id>
+							<groupId>car.maven</groupId>
+							<artifactId>more-war-demo-war2</artifactId>
+						</overlay>
+						<!-- 如果overlay中什么都不写，表示该overlay代表的是当前工程，即当前pom.xml所在的工程webapp，一般情况下不要加入当前工程 
+							<overlay> </overlay> -->
+					</overlays>
+				</configuration>
+			</plugin>
+			
+			<plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                        <target name="makedir" description="建立文件夹">
+					        <mkdir dir="${project.build.directory}/${project.build.finalName}/WEB-INF/classes/com/carl/war2"/>
+						    <copy todir="${project.build.directory}/${project.build.finalName}/WEB-INF/classes/com/carl/war2" 
+						    		file="../more-war-demo-war2/target/classes/com/carl/war2/War2.class" />
+					    </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+		</plugins>
+	</build>
+</project>
